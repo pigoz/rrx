@@ -21,8 +21,9 @@ const App = ({ state, cmd }) =>
 const init = (props) => Map({ counter: 0, resets: 0, ticks: 0 });
 
 const incr = v => v + 1;
-const tap = (msg) => (x) => { console.log(msg, x); return x; }
 
+// Cmd, short for Command is an Observable that represents a component event
+// Update: Cmd -> State (maps Cmd to State)
 const update = cmd =>
   Rx.Observable.merge(
     cmd('tac').state(s => s.update('ticks', incr)),
@@ -34,6 +35,8 @@ const update = cmd =>
       .state(s => s.update('counter', v => v + 1000)),
   );
 
+// Effects: Cmd -> Cmd
+// maps Cmd and external input Observables (i.e. timer, websocket) to Cmd
 const effects = (cmd) =>
   Rx.Observable.merge(
     Rx.Observable.interval(500).mapTo(cmd('tick')),
