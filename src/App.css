@@ -18,6 +18,13 @@
   font-size: large;
 }
 
+.App-reset {
+  background: pink;
+  border: none;
+  font-size: large;
+  border-radius: 2px;
+}
+
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

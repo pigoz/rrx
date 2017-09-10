@@ -5,24 +5,26 @@ import logo from './logo.svg';
 import { rrx } from './rrx';
 import './App.css';
 
-const App = ({ state }) =>
+const App = ({ state, cmd }) =>
   <div className="App">
-    {console.log('render', state.toJS())}
     <div className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
       <h2>elapsed: {state.get('counter')} seconds</h2>
+      <button className="App-reset" onClick={cmd('reset')}>reset</button>
     </div>
   </div>
 
-type T = 'tick';
+type T = 'tick' | 'reset';
 
 const init = () =>
   [{ counter: 0 }, undefined]
 
 const update = (state, cmd) => {
   switch (cmd.type) {
-    case 'tick': 
+    case 'tick':
       return state.update('counter', v => v + 1);
+    case 'reset':
+      return state.set('counter', 0);
     default:
       return state;
   }

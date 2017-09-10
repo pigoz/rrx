@@ -3,8 +3,7 @@ import * as React from 'react';
 import { Map } from 'immutable';
 
 type Model<A> = A;
-type Msg<Type, Payload> = { type: Type, payload: Payload };
-type Cmd<Type, Payload> = { type: Type, payload: Payload };
+type Cmd<Type, Payload = undefined> = { type: Type, payload: Payload };
 
 type RRXConfig<S, T> = $Exact<{
   init: () => [Model<S>, ?Cmd<T>],
@@ -25,11 +24,11 @@ export function rrx<P: {}, S: {}, T>({
   ): React.ComponentType<P> {
 
     class Container extends React.Component<P, S> {
-      // Innutable.js object can't be a top level object of state
+      // Immutable.js object can't be a top level object of state
       state = { s: Map(init()[0]) };
 
-      reduce = cmd =>
-        this.setState(state => ({ s: update(state.s, cmd) }))
+      reduce = cmd => this.setState(state => ({ s: update(state.s, cmd) }))
+      cmd = (type: T) => () => this.reduce({ type });
 
       componentDidMount() {
         if (!subscriptions) {
@@ -37,11 +36,18 @@ export function rrx<P: {}, S: {}, T>({
         }
 
         const source = subscriptions()
+        // XXX add cleanup in willunmount
         source.subscribe(this.reduce)
       }
 
       render() {
-        return <Wrapped {...this.props} state={this.state.s} />
+        return (
+          <Wrapped
+            {...this.props}
+            state={this.state.s}
+            cmd={this.cmd}
+          />
+        )
       }
     }
 
