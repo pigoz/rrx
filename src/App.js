@@ -10,26 +10,34 @@ const App = ({ state, cmd }) =>
   <div className="App">
     <div className="App-header">
       <img src={logo} className="App-logo" alt="logo" />
-      <h2>elapsed: {state.get('counter')} seconds</h2>
+      <h2>counter: {state.get('counter')}</h2>
+      <h2>resets: {state.get('resets')}</h2>
+      <h2>ticks: {state.get('ticks')}</h2>
       <button className="App-button" onClick={cmd('increase')}>increase</button>
       <button className="App-button" onClick={cmd('reset')}>reset</button>
     </div>
   </div>
 
-type T = 'tick' | 'increase' | 'reset';
+const init = (props) => Map({ counter: 0, resets: 0, ticks: 0 });
 
-const init = (props) => Map({ counter: 0 });
+const incr = v => v + 1;
+const tap = (msg) => (x) => { console.log(msg, x); return x; }
 
 const update = cmd =>
   Rx.Observable.merge(
-    cmd('tick').map(s => s.update('counter', v => v + 1)),
-    cmd('reset').map(s => s.set('counter', 0)),
+    cmd('tac').state(s => s.update('ticks', incr)),
+    cmd('tick').state(s => s.update('counter', incr)),
+    cmd('reset').state(s => s.set('counter', 0).update('resets', incr)),
     cmd('increase')
-      .delay(1000)
-      .switchMap(s => Rx.Observable.of(s.update('counter', v => v + 1000)))
-  )
+      .debounceTime(1000)
+      .takeUntil(cmd('reset'))
+      .state(s => s.update('counter', v => v + 1000)),
+  );
 
-const subscriptions = cmd =>
-  Rx.Observable.interval(500).mapTo(cmd('tick'));
+const effects = (cmd) =>
+  Rx.Observable.merge(
+    Rx.Observable.interval(500).mapTo(cmd('tick')),
+    cmd('tick').mapTo(cmd('tac')),
+  );
 
-export default rrx({ init, update, subscriptions })(App);
+export default rrx({ init, update, effects })(App);

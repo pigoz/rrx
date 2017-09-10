@@ -11,13 +11,24 @@ type RRXConfig<S, T> = $Exact<{
   subscriptions?: (x: Model<S>) => Msg<T>
 }>
 
+Rx.Observable.prototype.tap = function tap(msg) {
+  return this.map(s => {
+    console.log(msg, s);
+    return s;
+  });
+};
+
+Rx.Observable.prototype.state = function state(selector) {
+  return this.map(s => selector(s()));
+};
+
 export function rrx<P: {}, S: {}, T>({
   // P = Props
   // S = State
   // T = Messages Type Enum
   init,
   update,
-  subscriptions,
+  effects,
 }: RRXConfig<S, T>) {
   return function rrxcurry(
     Wrapped: React.StatelessFunctionalComponent<{ state: S } & P>
@@ -26,8 +37,6 @@ export function rrx<P: {}, S: {}, T>({
     class Container extends React.Component<P, S> {
       state = { s: init() };
       subjects = {};
-
-      reduce = cmd => this.setState(state => ({ s: update(state.s, cmd) }))
 
       cmd = (type: T) => {
         const cached = this.subjects[type]
@@ -41,14 +50,16 @@ export function rrx<P: {}, S: {}, T>({
         return sub;
       }
 
+      getState = () => this.state.s;
+
       dispatch = (type: T) => () =>
-        this.cmd(type).next(this.state.s);
+        this.cmd(type).next(this.getState);
 
       componentWillMount() {
-        const subs = subscriptions(this.cmd);
-        const events = update(this.cmd).startWith(init());
-        subs.subscribe(subject => subject.next(this.state.s));
-        events.subscribe(s => this.setState({ s }));
+        const eff = effects(this.cmd);
+        const upd = update(this.cmd);
+        eff.subscribe(subject => subject.next(this.getState));
+        upd.subscribe(s => this.setState({ s }));
       }
 
       render() {
