@@ -30,8 +30,11 @@ const update = cmd =>
     cmd('tick').state(s => s.update('counter', incr)),
     cmd('reset').state(s => s.set('counter', 0).update('resets', incr)),
     cmd('increase')
-      .debounceTime(1000)
-      .takeUntil(cmd('reset'))
+      .switchMap(s =>
+        Rx.Observable
+          .timer(1000)
+          .takeUntil(cmd('reset'))
+          .mapTo(s))
       .state(s => s.update('counter', v => v + 1000)),
   );
 
