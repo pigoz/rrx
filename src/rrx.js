@@ -41,12 +41,12 @@ export function rrx<P: {}, S: {}, T>({
         return sub;
       }
 
-      dispatch = (type: T) => () => this.cmd(type).next();
+      dispatch = (type: T) => () =>
+        this.cmd(type).next(this.state.s);
 
       componentWillMount() {
         const subs = subscriptions(this.cmd);
         const events = update(this.cmd).startWith(init());
-
         subs.subscribe(subject => subject.next(this.state.s));
         events.subscribe(s => this.setState({ s }));
       }
